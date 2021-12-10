@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_workhour/widgets/time_selector.dart';
+import 'package:time/time.dart';
 
 Map<int, String> dayOfWeek = {
   0: '일',
@@ -39,8 +40,8 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
   int currentPageOfGetToWork = 0;
   int currentPageOfLeaveWork = 0;
 
-  String getToWorkTime = '';
-  String leaveWorkTime = '';
+  Duration getToWorkTime = 0.seconds;
+  Duration leaveWorkTime = 0.seconds;
   String? currentDayOfWeek = dayOfWeek[DateTime.now().weekday];
 
   @override
@@ -57,8 +58,10 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
 
   @override
   Widget build(BuildContext context) {
+    var workHour = leaveWorkTime - getToWorkTime;
     return Column(children: <Widget>[
-      Text('$currentDayOfWeek, $getToWorkTime $leaveWorkTime'),
+      Text(
+          '$currentDayOfWeek, 시작시간: $getToWorkTime 종료시간: $leaveWorkTime 근무시간: $workHour'),
       Container(
         margin: const EdgeInsets.symmetric(vertical: 30),
         child: SingleChildScrollView(
@@ -102,8 +105,10 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
       TimeSelector(
         onChange: (time) {
           print('one $time');
+          Duration hour = int.parse(time.split(':')[0]).hours;
+          Duration minutes = int.parse(time.split(':')[1]).minutes;
           setState(() {
-            getToWorkTime = time;
+            getToWorkTime = hour + minutes;
           });
         },
       ),
@@ -124,8 +129,10 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
       ),
       TimeSelector(onChange: (time) {
         print('two $time');
+        Duration hour = int.parse(time.split(':')[0]).hours;
+        Duration minutes = int.parse(time.split(':')[1]).minutes;
         setState(() {
-          leaveWorkTime = time;
+          leaveWorkTime = hour + minutes;
         });
       })
     ]);
