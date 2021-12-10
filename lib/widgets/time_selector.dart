@@ -14,7 +14,7 @@ List<String> selectableTimes = hours
 
 class _TimeSelector extends State<TimeSelector> {
   CarouselController carouselController = CarouselController();
-  int index = 0;
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,11 @@ class _TimeSelector extends State<TimeSelector> {
           viewportFraction: 0.25,
           onPageChanged: (index, reason) {
             print('$index, $reason');
-            widget.onChange(index);
+            String selectedTime = selectableTimes[index];
+            setState(() {
+              selectedIndex = index;
+            });
+            widget.onChange(selectedTime);
             // onPress(index);
           }),
       items: selectableTimes.asMap().entries.map((entry) {
@@ -43,7 +47,7 @@ class _TimeSelector extends State<TimeSelector> {
               text,
               style: TextStyle(
                   fontSize: 24.0,
-                  color: index == page ? Colors.black : Colors.grey),
+                  color: selectedIndex == page ? Colors.black : Colors.grey),
             ));
       }).toList(),
     );
@@ -51,7 +55,7 @@ class _TimeSelector extends State<TimeSelector> {
 }
 
 class TimeSelector extends StatefulWidget {
-  final Function(int index) onChange;
+  final Function(String time) onChange;
 
   const TimeSelector({Key? key, required this.onChange}) : super(key: key);
 

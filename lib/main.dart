@@ -100,8 +100,11 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
         ],
       ),
       TimeSelector(
-        onChange: (index) {
-          print('one $index');
+        onChange: (time) {
+          print('one $time');
+          setState(() {
+            getToWorkTime = time;
+          });
         },
       ),
       const Divider(
@@ -119,8 +122,11 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
           )
         ],
       ),
-      TimeSelector(onChange: (index) {
-        print('two $index');
+      TimeSelector(onChange: (time) {
+        print('two $time');
+        setState(() {
+          leaveWorkTime = time;
+        });
       })
     ]);
   }
