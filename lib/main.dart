@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_workhour/models/workhour.dart';
+import 'package:flutter_workhour/provider/workhour_provider.dart';
 import 'package:flutter_workhour/widgets/time_selector.dart';
+import 'package:provider/provider.dart';
 import 'package:time/time.dart';
 
 Map<int, String> dayOfWeek = {
@@ -15,20 +18,40 @@ Map<int, String> dayOfWeek = {
 void main() {
   runApp(MaterialApp(
       title: 'When do you commute?',
-      home: Scaffold(
-          appBar: AppBar(
-            title: const Text('When do you commute?',
-                style: TextStyle(color: Colors.black)),
-            backgroundColor: Colors.white,
-          ),
-          body: _MyStatefulWidget(),
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              // Respond to button press
-            },
-            child: const Icon(Icons.save),
-          ))));
+      home: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+              create: (BuildContext context) => WorkhourProvider()),
+        ],
+        child: const Home(),
+      )));
+}
+
+class Home extends StatelessWidget {
+  const Home({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('When do you commute?',
+              style: TextStyle(color: Colors.black)),
+          backgroundColor: Colors.white,
+        ),
+        body: _MyStatefulWidget(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            // Respond to button press
+            Workhour workhour =
+                Provider.of<WorkhourProvider>(context, listen: false).workhour;
+            print('save data' + workhour.toString());
+          },
+          child: const Icon(Icons.save),
+        ));
+  }
 }
 
 class _MyStatefulWidget extends StatefulWidget {
@@ -73,6 +96,11 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
                 .map((e) => ElevatedButton(
                     onPressed: () {
                       print(e);
+                      Provider.of<WorkhourProvider>(context, listen: false)
+                              .dayOfWeek =
+                          dayOfWeek.values
+                              .toList()
+                              .indexWhere((element) => element == e);
                       setState(() {
                         currentDayOfWeek = e;
                       });
@@ -107,6 +135,8 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
           print('one $time');
           Duration hour = int.parse(time.split(':')[0]).hours;
           Duration minutes = int.parse(time.split(':')[1]).minutes;
+          Provider.of<WorkhourProvider>(context, listen: false).startedAt =
+              hour + minutes;
           setState(() {
             getToWorkTime = hour + minutes;
           });
@@ -131,6 +161,8 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
         print('two $time');
         Duration hour = int.parse(time.split(':')[0]).hours;
         Duration minutes = int.parse(time.split(':')[1]).minutes;
+        Provider.of<WorkhourProvider>(context, listen: false).endedAt =
+            hour + minutes;
         setState(() {
           leaveWorkTime = hour + minutes;
         });

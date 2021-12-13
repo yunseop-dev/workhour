@@ -1,8 +1,8 @@
 class Workhour {
-  final int id;
-  final int dayOfWeek;
-  final Duration startedAt;
-  final Duration endedAt;
+  int id;
+  int dayOfWeek;
+  Duration startedAt;
+  Duration endedAt;
 
   Workhour(
       {required this.id,
@@ -17,5 +17,10 @@ class Workhour {
       'startedAt': startedAt,
       'endedAt': endedAt,
     };
+  }
+
+  @override
+  String toString() {
+    return '{id: $id, dayOfWeek: $dayOfWeek, startedAt: $startedAt, endedAt: $endedAt}';
   }
 }
