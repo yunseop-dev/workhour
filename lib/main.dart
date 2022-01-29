@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_workhour/models/workhour.dart';
 import 'package:flutter_workhour/provider/workhour_provider.dart';
+import 'package:flutter_workhour/utils/db_helper.dart';
 import 'package:flutter_workhour/widgets/time_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:time/time.dart';
@@ -34,6 +35,7 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dbHelper = DBHelper();
     return Scaffold(
         appBar: AppBar(
           title: const Text('When do you commute?',
@@ -43,11 +45,16 @@ class Home extends StatelessWidget {
         body: _MyStatefulWidget(),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
+          onPressed: () async {
             // Respond to button press
             Workhour workhour =
                 Provider.of<WorkhourProvider>(context, listen: false).workhour;
-            print('save data' + workhour.toString());
+            bool isExists = await dbHelper.isExists(workhour.dayOfWeek);
+            if (isExists) {
+              await dbHelper.update(workhour);
+            } else {
+              await dbHelper.insert(workhour);
+            }
           },
           child: const Icon(Icons.save),
         ));
@@ -66,11 +73,24 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
   Duration getToWorkTime = 0.seconds;
   Duration leaveWorkTime = 0.seconds;
   String? currentDayOfWeek = dayOfWeek[DateTime.now().weekday];
+  final dbHelper = DBHelper();
 
   @override
   void initState() {
     super.initState();
     print('initState');
+    dbHelper.getByDayOfWeek(DateTime.now().weekday).then((value) {
+      setState(() {
+        getToWorkTime = value.startedAt;
+        leaveWorkTime = value.endedAt;
+        currentDayOfWeek = dayOfWeek[value.dayOfWeek];
+      });
+      var workhour = Provider.of<WorkhourProvider>(context, listen: false);
+      workhour.id = value.dayOfWeek;
+      workhour.startedAt = value.startedAt;
+      workhour.endedAt = value.endedAt;
+      workhour.dayOfWeek = value.dayOfWeek;
+    });
   }
 
   @override
@@ -95,14 +115,26 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
             children: dayOfWeek.values
                 .map((e) => ElevatedButton(
                     onPressed: () {
-                      print(e);
+                      // print(e);
+                      int weekday = dayOfWeek.values
+                          .toList()
+                          .indexWhere((element) => element == e);
+
                       Provider.of<WorkhourProvider>(context, listen: false)
-                              .dayOfWeek =
-                          dayOfWeek.values
-                              .toList()
-                              .indexWhere((element) => element == e);
-                      setState(() {
-                        currentDayOfWeek = e;
+                          .dayOfWeek = weekday;
+
+                      dbHelper.getByDayOfWeek(weekday).then((value) {
+                        setState(() {
+                          getToWorkTime = value.startedAt;
+                          leaveWorkTime = value.endedAt;
+                          currentDayOfWeek = e;
+                        });
+                        var workhour = Provider.of<WorkhourProvider>(context,
+                            listen: false);
+                        workhour.id = value.dayOfWeek;
+                        workhour.startedAt = value.startedAt;
+                        workhour.endedAt = value.endedAt;
+                        workhour.dayOfWeek = value.dayOfWeek;
                       });
                     },
                     child: Text(e,
@@ -132,7 +164,6 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
       ),
       TimeSelector(
         onChange: (time) {
-          print('one $time');
           Duration hour = int.parse(time.split(':')[0]).hours;
           Duration minutes = int.parse(time.split(':')[1]).minutes;
           Provider.of<WorkhourProvider>(context, listen: false).startedAt =
@@ -158,7 +189,6 @@ class _MyStatefulWidgetState extends State<_MyStatefulWidget> {
         ],
       ),
       TimeSelector(onChange: (time) {
-        print('two $time');
         Duration hour = int.parse(time.split(':')[0]).hours;
         Duration minutes = int.parse(time.split(':')[1]).minutes;
         Provider.of<WorkhourProvider>(context, listen: false).endedAt =

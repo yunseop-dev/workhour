@@ -26,7 +26,7 @@ class DBHelper {
     return _db;
   }
 
-  Future<void> insertWorkhour(Workhour workhour) async {
+  Future<void> insert(Workhour workhour) async {
     final db = await database;
 
     // Workhour를 올바른 테이블에 추가하세요. 또한
@@ -34,16 +34,48 @@ class DBHelper {
     // 만약 동일한 workhour가 여러번 추가되면, 이전 데이터를 덮어쓸 것입니다.
     await db.insert(
       tableName,
-      workhour.toMap(),
+      {
+        'id': workhour.id,
+        'dayOfWeek': workhour.dayOfWeek,
+        'startedAt': workhour.startedAt.inSeconds,
+        'endedAt': workhour.endedAt.inSeconds,
+      },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<List<Workhour>> workhours() async {
+  Future<Workhour> getByDayOfWeek(int dayOfWeek) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db
+        .query(tableName, where: 'dayOfWeek = ?', whereArgs: [dayOfWeek]);
+    if (maps.isNotEmpty) {
+      return Workhour(
+          id: maps.first['id'],
+          dayOfWeek: maps.first['dayOfWeek'],
+          startedAt: Duration(seconds: maps.first['startedAt']),
+          endedAt: Duration(seconds: maps.first['endedAt']));
+    }
+    return Workhour(
+        id: dayOfWeek,
+        dayOfWeek: dayOfWeek,
+        startedAt: Duration(
+            hours: DateTime.now().hour, minutes: DateTime.now().minute),
+        endedAt: Duration(
+            hours: DateTime.now().hour + 9, minutes: DateTime.now().minute));
+  }
+
+  Future<bool> isExists(int dayOfWeek) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db
+        .query(tableName, where: 'dayOfWeek = ?', whereArgs: [dayOfWeek]);
+    return maps.isNotEmpty;
+  }
+
+  Future<List<Workhour>> list() async {
     final db = await database;
 
     // 모든 Workhour를 얻기 위해 테이블에 질의합니다.
-    final List<Map<String, dynamic>> maps = await db.query('workhours');
+    final List<Map<String, dynamic>> maps = await db.query(tableName);
 
     // List<Map<String, dynamic>를 List<Workhour>으로 변환합니다.
     return List.generate(maps.length, (i) {
@@ -56,13 +88,18 @@ class DBHelper {
     });
   }
 
-  Future<void> updateWorkhour(Workhour workhour) async {
+  Future<void> update(Workhour workhour) async {
     final db = await database;
 
     // 주어진 Workhour를 수정합니다.
     await db.update(
       tableName,
-      workhour.toMap(),
+      {
+        'id': workhour.id,
+        'dayOfWeek': workhour.dayOfWeek,
+        'startedAt': workhour.startedAt.inSeconds,
+        'endedAt': workhour.endedAt.inSeconds,
+      },
       // Workhour의 id가 일치하는 지 확인합니다.
       where: "dayOfWeek = ?",
       // Workhour의 id를 whereArg로 넘겨 SQL injection을 방지합니다.
@@ -70,7 +107,7 @@ class DBHelper {
     );
   }
 
-  Future<void> deleteWorkhour(int id) async {
+  Future<void> delete(int id) async {
     final db = await database;
 
     // 데이터베이스에서 Workhour를 삭제합니다.
